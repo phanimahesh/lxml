@@ -861,7 +861,7 @@ class FormElement(HtmlElement):
 
 HtmlElementClassLookup._default_element_classes['form'] = FormElement
 
-def submit_form(form, extra_values=None, open_http=None):
+def submit_form(form, extra_values=None, open_http=None, encoding='ISO-8859-1'):
     """
     Helper function to submit a form.  Returns a file-like object, as from
     ``urllib.urlopen()``.  This object also has a ``.geturl()`` function,
@@ -891,14 +891,14 @@ def submit_form(form, extra_values=None, open_http=None):
             extra_values = extra_values.items()
         values.extend(extra_values)
     if open_http is None:
-        open_http = open_http_urllib
+        open_http = lambda *args,**kwargs: open_http_urllib(*args,encoding=encoding,**kwargs)
     if form.action:
         url = form.action
     else:
         url = form.base_url
     return open_http(form.method, url, values)
 
-def open_http_urllib(method, url, values):
+def open_http_urllib(method, url, values, encoding):
     if not url:
         raise ValueError("cannot submit, no URL provided")
     ## FIXME: should test that it's not a relative URL or something
@@ -915,9 +915,7 @@ def open_http_urllib(method, url, values):
         url += urlencode(values)
         data = None
     else:
-    ## FIXME: Find a way to ask user about preferred encoding scheme and use it.
-    ## encoding to bytes is REQUIRED in python3.
-        data = urlencode(values).encode('utf-8')
+        data = urlencode(values).encode(encoding)
     return urlopen(url, data)
 
 class FieldsDict(DictMixin):
